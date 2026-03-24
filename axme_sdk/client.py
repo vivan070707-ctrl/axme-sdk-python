@@ -1645,14 +1645,27 @@ class AxmeClient:
         attempts = 1 + (self._config.max_retries if retryable else 0)
         for attempt_idx in range(attempts):
             try:
-                response = self._http.request(
-                    method=method,
-                    url=path,
-                    params=params,
-                    json=json_body,
-                    headers=headers,
-                )
-            except (httpx.TimeoutException, httpx.TransportError):
+            response = self._http.request(
+                method=method,
+                url=path,
+                params=params,
+                json=json_body,
+                headers=headers,
+            )
+
+            if response.status_code == 401:
+                raise AxmeAuthError(
+                    401,
+                    "API key invalid — check AXME_API_KEY or run `axme login`",
+           )
+
+            if response.status_code == 403:
+                raise AxmeAuthError(
+                    403,
+                    "Access denied — insufficient permissions",
+        )
+
+        except (httpx.TimeoutException, httpx.TransportError):
                 if attempt_idx >= attempts - 1:
                     raise
                 self._sleep_before_retry(attempt_idx, retry_after=None)
