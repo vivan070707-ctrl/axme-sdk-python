@@ -1936,8 +1936,16 @@ class AxmeClient:
             "retry_after": retry_after,
         }
         status_code = response.status_code
-        if status_code in (401, 403):
-            raise AxmeAuthError(status_code, message, **kwargs)
+        if status_code == 401:
+            raise AxmeAuthError(
+                status_code,
+                f"API key invalid - check AXME_API_KEY or run `axme login`. Server: {message}"
+                **kwargs)
+        if status_code == 403:
+            raise AxmeAuthError(
+                status_code,
+                f"Access denied. Check permissions. Server: {message}"
+                **kwargs)
         if status_code in (400, 409, 413, 422):
             raise AxmeValidationError(status_code, message, **kwargs)
         if status_code == 429:
